@@ -1,0 +1,128 @@
+global:
+  resolve_timeout: 5m
+  slack_api_url: 'replace-this'
+
+  # Email / SMTP via Resend
+  # smtp_auth_password = your Resend API key (starts with re_...)
+  smtp_smarthost: 'smtp.resend.com:587'
+  smtp_from: 'admin@felixgogodae.xyz'
+  smtp_auth_username: 'resend'
+  smtp_auth_password: 'REPLACE_AT_INSTALL'
+  smtp_require_tls: true
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  group_by: ['alertname', 'severity', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'slack-and-email-warning'
+
+  routes:
+    - matchers:
+        - severity = "critical"
+      receiver: 'slack-and-email-critical'
+      repeat_interval: 1h
+      continue: false
+
+    - matchers:
+        - severity = "warning"
+      receiver: 'slack-and-email-warning'
+      repeat_interval: 4h
+      continue: false
+
+    - matchers:
+        - severity = "info"
+      receiver: 'slack-only-info'
+      repeat_interval: 12h
+      continue: false
+
+inhibit_rules:
+  - source_matchers:
+      - alertname = "APIDown"
+    target_matchers:
+      - alertname =~ "SLO.*|Availability.*|Latency.*|CPU.*|Memory.*|Disk.*"
+    equal: ['instance']
+
+  - source_matchers:
+      - alertname = "CPUUsageCritical"
+    target_matchers:
+      - alertname = "CPUUsageHigh"
+    equal: ['instance']
+
+  - source_matchers:
+      - alertname = "MemoryUsageCritical"
+    target_matchers:
+      - alertname = "MemoryUsageHigh"
+    equal: ['instance']
+
+  - source_matchers:
+      - alertname = "DiskUsageCritical"
+    target_matchers:
+      - alertname = "DiskUsageHigh"
+    equal: ['instance']
+
+  - source_matchers:
+      - alertname =~ "SLOFastBurn|AvailabilityFastBurn|LatencyFastBurn"
+    target_matchers:
+      - alertname =~ "SLOSlowBurn|AvailabilitySlowBurn|LatencySlowBurn"
+    equal: ['slo']
+
+receivers:
+  - name: 'slack-and-email-critical'
+    slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+        icon_emoji: ':rotating_light:'
+        username: 'SkillBridge Alerts'
+        title: '{{ template "skillbridge.title" . }}'
+        text: '{{ template "skillbridge.text" . }}'
+        color: '{{ template "skillbridge.color" . }}'
+        actions:
+          - type: button
+            text: 'View Dashboard'
+            url: '{{ with (index .Alerts 0).Annotations.dashboard_url }}{{ . }}{{ else }}http://localhost:3200{{ end }}'
+          - type: button
+            text: 'View Runbook'
+            url: '{{ with (index .Alerts 0).Annotations.runbook_url }}{{ . }}{{ else }}https://github.com/hng14/skillbridge/tree/main/observability/runbooks{{ end }}'
+    email_configs:
+      - to: 'team@skillbridge.hng14.com'
+        send_resolved: true
+        headers:
+          Subject: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }} - {{ .CommonLabels.severity | toUpper }}{{ end }}] {{ .CommonLabels.alertname }}'
+        html: '{{ template "skillbridge.email.html" . }}'
+
+  - name: 'slack-and-email-warning'
+    slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+        icon_emoji: ':warning:'
+        username: 'SkillBridge Alerts'
+        title: '{{ template "skillbridge.title" . }}'
+        text: '{{ template "skillbridge.text" . }}'
+        color: '{{ template "skillbridge.color" . }}'
+        actions:
+          - type: button
+            text: 'View Dashboard'
+            url: '{{ with (index .Alerts 0).Annotations.dashboard_url }}{{ . }}{{ else }}http://localhost:3200{{ end }}'
+          - type: button
+            text: 'View Runbook'
+            url: '{{ with (index .Alerts 0).Annotations.runbook_url }}{{ . }}{{ else }}https://github.com/hng14/skillbridge/tree/main/observability/runbooks{{ end }}'
+    email_configs:
+      - to: 'team@skillbridge.hng14.com'
+        send_resolved: true
+        headers:
+          Subject: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }} - {{ .CommonLabels.severity | toUpper }}{{ end }}] {{ .CommonLabels.alertname }}'
+        html: '{{ template "skillbridge.email.html" . }}'
+
+  - name: 'slack-only-info'
+    slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+        icon_emoji: ':information_source:'
+        username: 'SkillBridge Alerts'
+        title: '{{ template "skillbridge.title" . }}'
+        text: '{{ template "skillbridge.text" . }}'
+        color: '{{ template "skillbridge.color" . }}'

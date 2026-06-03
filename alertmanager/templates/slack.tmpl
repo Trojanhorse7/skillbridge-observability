@@ -1,0 +1,119 @@
+{{/* ── Title ───────────────────────────────────────────────────────────────── */}}
+{{ define "skillbridge.title" -}}
+{{ if eq .Status "firing" -}}
+  {{ if eq .CommonLabels.severity "critical" }}🔴{{ else if eq .CommonLabels.severity "warning" }}🟡{{ else }}🔵{{ end }}
+{{- else -}}
+  ✅
+{{- end }}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }} · {{ .Alerts.Firing | len }} alert{{ if gt (len .Alerts.Firing) 1 }}s{{ end }}{{ end }}]
+{{ .CommonLabels.alertname }}
+{{- end }}
+
+
+{{/* ── Color ───────────────────────────────────────────────────────────────── */}}
+{{ define "skillbridge.color" -}}
+{{ if eq .Status "resolved" -}}
+  good
+{{- else if eq .CommonLabels.severity "critical" -}}
+  danger
+{{- else if eq .CommonLabels.severity "warning" -}}
+  warning
+{{- else -}}
+  #439FE0
+{{- end }}
+{{- end }}
+
+
+{{/* ── Slack body ──────────────────────────────────────────────────────────── */}}
+{{ define "skillbridge.text" -}}
+{{ range .Alerts }}
+---
+*Alert:*    `{{ .Labels.alertname }}`
+*Severity:* `{{ .Labels.severity | toUpper }}`
+*Service:*  `{{ with .Labels.service }}{{ . }}{{ else }}skillbridge{{ end }}`
+*Host:*     `{{ with .Labels.instance }}{{ . }}{{ else }}N/A{{ end }}`
+*Status:*   {{ if eq .Status "firing" }}🔥 Firing{{ else }}✅ Resolved{{ end }}
+
+*Summary:*
+> {{ .Annotations.summary }}
+
+{{ if .Annotations.description -}}
+*Details:*
+> {{ .Annotations.description }}
+{{ end -}}
+
+*Timing:*
+• Started: `{{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}`
+{{ if eq .Status "resolved" -}}
+• Resolved: `{{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}`
+• Duration: `{{ .EndsAt.Sub .StartsAt }}`
+{{ end -}}
+
+*Links:*
+{{ if .Annotations.dashboard_url }}• <{{ .Annotations.dashboard_url }}|📊 Grafana Dashboard>{{ end }}
+{{ if .Annotations.runbook_url }}• <{{ .Annotations.runbook_url }}|📖 Runbook>{{ end }}
+{{ end -}}
+{{- end }}
+
+
+{{/* ── Email HTML body ─────────────────────────────────────────────────────── */}}
+{{ define "skillbridge.email.html" -}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .header { padding: 20px 24px; color: #fff; }
+    .header.firing.critical { background: #d32f2f; }
+    .header.firing.warning  { background: #f57c00; }
+    .header.resolved        { background: #388e3c; }
+    .header h1 { margin: 0; font-size: 20px; }
+    .body   { padding: 24px; }
+    table   { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    td      { padding: 8px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+    td:first-child { font-weight: bold; color: #555; width: 130px; }
+    .value  { font-family: monospace; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+    .links  { margin-top: 16px; }
+    .btn    { display: inline-block; padding: 10px 20px; border-radius: 4px; text-decoration: none; color: #fff; margin-right: 10px; font-size: 14px; }
+    .btn-dashboard { background: #1976d2; }
+    .btn-runbook   { background: #455a64; }
+  </style>
+</head>
+<body>
+<div class="container">
+  {{ range .Alerts }}
+  {{ $status := .Status }}
+  {{ $severity := .Labels.severity }}
+  <div class="header {{ $status }} {{ $severity }}">
+    <h1>
+      {{ if eq $status "firing" }}
+        {{ if eq $severity "critical" }}⚠️ FIRING — {{ .Labels.alertname }}{{ else }}⚠️ FIRING — {{ .Labels.alertname }}{{ end }}
+      {{ else }}
+        ✅ RESOLVED — {{ .Labels.alertname }}
+      {{ end }}
+    </h1>
+  </div>
+  <div class="body">
+    <table>
+      <tr><td>Alert</td><td><span class="value">{{ .Labels.alertname }}</span></td></tr>
+      <tr><td>Severity</td><td><span class="value">{{ $severity | toUpper }}</span></td></tr>
+      <tr><td>Status</td><td><span class="value">{{ $status | toUpper }}</span></td></tr>
+      <tr><td>Host</td><td><span class="value">{{ with .Labels.instance }}{{ . }}{{ else }}app-server{{ end }}</span></td></tr>
+      {{ with .Annotations.description }}<tr><td>Value</td><td>{{ . }}</td></tr>{{ end }}
+      <tr><td>Summary</td><td>{{ .Annotations.summary }}</td></tr>
+      {{ if .Annotations.description }}<tr><td>Description</td><td>{{ .Annotations.description }}</td></tr>{{ end }}
+      <tr><td>Started</td><td>{{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}</td></tr>
+      {{ if eq $status "resolved" }}<tr><td>Resolved</td><td>{{ .EndsAt.Format "2006-01-02 15:04:05 UTC" }}</td></tr>{{ end }}
+    </table>
+    <div class="links">
+      {{ if .Annotations.dashboard_url }}<a href="{{ .Annotations.dashboard_url }}" class="btn btn-dashboard">View Dashboard</a>{{ end }}
+      {{ if .Annotations.runbook_url }}<a href="{{ .Annotations.runbook_url }}" class="btn btn-runbook">View Runbook</a>{{ end }}
+    </div>
+  </div>
+  {{ end }}
+</div>
+</body>
+</html>
+{{- end }}

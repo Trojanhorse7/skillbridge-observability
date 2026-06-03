@@ -1,0 +1,83 @@
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/promtail-positions.yaml
+
+clients:
+  - url: http://localhost:3100/loki/api/v1/push
+
+scrape_configs:
+
+  # ── PM2: production backend ──────────────────────────────────────────────────
+  - job_name: skillbridge-api-prod
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: skillbridge-api
+          environment: production
+          service: backend
+          __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_PROD__-out*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}'
+          max_wait_time: 3s
+      - regex:
+          expression: '(?P<level>INFO|WARN|ERROR|DEBUG|VERBOSE|LOG)'
+      - labels:
+          level:
+      - match:
+          selector: '{level="ERROR"}'
+          stages:
+            - labels:
+                error: "true"
+
+  - job_name: skillbridge-api-prod-errors
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: skillbridge-api
+          environment: production
+          service: backend
+          log_type: error
+          __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_PROD__-error*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}|\[.*\]'
+          max_wait_time: 3s
+      - labels:
+          level: error
+
+  # ── PM2: staging backend ─────────────────────────────────────────────────────
+  - job_name: skillbridge-api-staging
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: skillbridge-api
+          environment: staging
+          service: backend
+          __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_STAGING__-out*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}'
+          max_wait_time: 3s
+      - regex:
+          expression: '(?P<level>INFO|WARN|ERROR|DEBUG|VERBOSE|LOG)'
+      - labels:
+          level:
+
+  - job_name: skillbridge-api-staging-errors
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: skillbridge-api
+          environment: staging
+          service: backend
+          log_type: error
+          __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_STAGING__-error*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}|\[.*\]'
+          max_wait_time: 3s
+      - labels:
+          level: error

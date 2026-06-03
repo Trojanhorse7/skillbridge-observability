@@ -1,0 +1,68 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["localhost:9093"]
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["localhost:9100"]
+    scrape_interval: 15s
+
+  # SkillBridge NestJS API — exposes /metrics via prom-client
+  - job_name: "skillbridge-api"
+    static_configs:
+      - targets: ["localhost:__API_PORT_PROD__"]
+        labels:
+          environment: "production"
+          service: "backend"
+      - targets: ["localhost:__API_PORT_STAGING__"]
+        labels:
+          environment: "staging"
+          service: "backend"
+    metrics_path: /metrics
+
+  # Blackbox HTTP probes — uptime + SSL for all environments
+  - job_name: "blackbox-http"
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - __BACKEND_PROD_URL__/health
+        labels:
+          environment: "production"
+          service: "backend"
+      - targets:
+          - __BACKEND_STAGING_URL__/health
+        labels:
+          environment: "staging"
+          service: "backend"
+      - targets:
+          - __FRONTEND_PROD_URL__/api/health
+        labels:
+          environment: "production"
+          service: "frontend"
+      - targets:
+          - __FRONTEND_STAGING_URL__/api/health
+        labels:
+          environment: "staging"
+          service: "frontend"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: localhost:9115
