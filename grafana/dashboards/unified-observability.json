@@ -49,7 +49,7 @@
         "multi": false,
         "includeAll": true,
         "allValue": ".*",
-        "current": {}
+        "current": { "text": "All", "value": ".*" }
       }
     ]
   },
@@ -266,5 +266,6 @@
         "showTime": true,
         "sortOrder": "Descending"
       }
+    }
   ]
 }

@@ -343,6 +343,114 @@
           "legendFormat": "Uptime"
         }
       ]
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "SSL Certificates & Uptime Probes",
+      "gridPos": { "x": 0, "y": 49, "w": 24, "h": 1 }
+    },
+    {
+      "id": 21,
+      "title": "SSL Certificate Expiry (days)",
+      "description": "Days until the TLS certificate expires for each HTTPS endpoint. Alert fires at 14 days.",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 50, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "(probe_ssl_earliest_cert_expiry{job=\"blackbox-http\"} - time()) / 86400",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "yellow", "value": 14 },
+              { "color": "green",  "value": 30 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 22,
+      "title": "Endpoint Uptime (24h)",
+      "description": "Probe success rate over the last 24 hours per endpoint.",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 50, "w": 12, "h": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_success{job=\"blackbox-http\"}[24h]) * 100",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "yellow", "value": 95 },
+              { "color": "green",  "value": 99.5 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      }
+    },
+    {
+      "id": 23,
+      "title": "Probe Response Time",
+      "description": "HTTP probe response time in seconds for all monitored endpoints.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 56, "w": 24, "h": 7 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "probe_duration_seconds{job=\"blackbox-http\"}",
+          "legendFormat": "{{ instance }}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "lineWidth": 2, "fillOpacity": 5 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red",    "value": 2 }
+            ]
+          }
+        }
+      },
+      "options": {
+        "tooltip": { "mode": "multi" },
+        "legend": { "displayMode": "list", "placement": "bottom" }
+      }
     }
   ]
 }
