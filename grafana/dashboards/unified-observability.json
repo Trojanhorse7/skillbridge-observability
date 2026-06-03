@@ -36,6 +36,20 @@
         "includeAll": true,
         "allValue": ".*",
         "current": {}
+      },
+      {
+        "name": "environment",
+        "label": "Environment",
+        "type": "custom",
+        "options": [
+          { "text": "All",        "value": ".*",         "selected": true },
+          { "text": "production", "value": "production", "selected": false },
+          { "text": "staging",    "value": "staging",    "selected": false }
+        ],
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {}
       }
     ]
   },
@@ -56,12 +70,12 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{status=~\"5..\", job=~\"$service\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{status=~\"5..\", job=~\"$service\", environment=~\"$environment\"}[5m]))",
           "legendFormat": "Error rate (5xx/s)",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$service\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", environment=~\"$environment\"}[5m]))",
           "legendFormat": "Total request rate (/s)",
           "refId": "B"
         }
@@ -81,7 +95,7 @@
       "links": [
         {
           "title": "Explore errors in Loki",
-          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{service_name=\\\"$service\\\"} |= \\\"error\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
+          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{job=\\\"$service\\\", environment=\\\"$environment\\\"} |= \\\"error\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
           "targetBlank": true
         }
       ]
@@ -95,17 +109,17 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\", environment=~\"$environment\"}[5m])) by (le))",
           "legendFormat": "p99 latency",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\", environment=~\"$environment\"}[5m])) by (le))",
           "legendFormat": "p95 latency",
           "refId": "B"
         },
         {
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\", environment=~\"$environment\"}[5m])) by (le))",
           "legendFormat": "p50 latency",
           "refId": "C"
         }
@@ -127,7 +141,7 @@
       "links": [
         {
           "title": "Explore slow requests in Loki",
-          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{service_name=\\\"$service\\\"} |= \\\"slow\\\" or |= \\\"timeout\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
+          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{job=\\\"$service\\\", environment=\\\"$environment\\\"} |= \\\"slow\\\" or |= \\\"timeout\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
           "targetBlank": true
         }
       ]
@@ -141,8 +155,8 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$service\"}[5m])) by (job)",
-          "legendFormat": "{{ job }} RPS",
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", environment=~\"$environment\"}[5m])) by (job, environment)",
+          "legendFormat": "{{ job }} {{ environment }} RPS",
           "refId": "A"
         }
       ],
@@ -157,8 +171,8 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "job:http_error_ratio:rate5m * 100",
-          "legendFormat": "{{ job }} error %",
+          "expr": "sum(rate(http_requests_total{job=~\"$service\", status=~\"5..\", environment=~\"$environment\"}[5m])) by (job, environment) / sum(rate(http_requests_total{job=~\"$service\", environment=~\"$environment\"}[5m])) by (job, environment) * 100",
+          "legendFormat": "{{ job }} {{ environment }} error %",
           "refId": "A"
         }
       ],
@@ -179,7 +193,7 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
         {
-          "expr": "job:http_error_ratio:rate1h / 0.01",
+          "expr": "job:http_request_errors:ratio1h{job=\"skillbridge-api\"} / 0.01",
           "legendFormat": "Burn Rate (1h)",
           "refId": "A"
         }
@@ -215,7 +229,7 @@
       "datasource": { "type": "loki", "uid": "loki" },
       "targets": [
         {
-          "expr": "{service_name=~\"$service\"} |= \"\"",
+          "expr": "{job=~\"$service\", environment=~\"$environment\"} |= \"\"",
           "legendFormat": "",
           "refId": "A"
         }
@@ -240,7 +254,7 @@
       "datasource": { "type": "loki", "uid": "loki" },
       "targets": [
         {
-          "expr": "{service_name=~\"$service\"} |~ \"(?i)(error|exception|fatal|panic)\"",
+          "expr": "{job=~\"$service\", environment=~\"$environment\"} |~ \"(?i)(error|exception|fatal|panic)\"",
           "legendFormat": "",
           "refId": "A"
         }
@@ -252,74 +266,5 @@
         "showTime": true,
         "sortOrder": "Descending"
       }
-    },
-    {
-      "id": 20,
-      "type": "row",
-      "title": "Traces — Step 3 of Drill-Down",
-      "description": "Search for traces by service and time window. Or click a traceID link from the Logs panels above.",
-      "gridPos": { "x": 0, "y": 28, "w": 24, "h": 1 }
-    },
-    {
-      "id": 21,
-      "title": "Recent Traces",
-      "description": "Traces from Tempo for the selected service. Click any Trace ID to open the full span waterfall in Tempo.",
-      "type": "table",
-      "gridPos": { "x": 0, "y": 29, "w": 24, "h": 8 },
-      "datasource": { "type": "tempo", "uid": "tempo" },
-      "options": {
-        "sortBy": [{ "displayName": "Start time", "desc": true }]
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "traceID" },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open in Tempo",
-                    "url": "/explore?left={\"datasource\":\"tempo\",\"queries\":[{\"refId\":\"A\",\"queryType\":\"traceId\",\"query\":\"${__value.raw}\"}],\"range\":{\"from\":\"now-1h\",\"to\":\"now\"}}",
-                    "targetBlank": true
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      "targets": [
-        {
-          "datasource": { "type": "tempo", "uid": "tempo" },
-          "queryType": "traceql",
-          "query": "{resource.service.name=~\"$service\"}",
-          "refId": "A",
-          "limit": 20,
-          "tableType": "traces"
-        }
-      ]
-    },
-    {
-      "id": 30,
-      "type": "row",
-      "title": "Service Map",
-      "gridPos": { "x": 0, "y": 37, "w": 24, "h": 1 }
-    },
-    {
-      "id": 31,
-      "title": "Service Dependency Map",
-      "description": "Node graph showing request flow between services. Node size = request rate. Edge colour = error rate.",
-      "type": "nodeGraph",
-      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 10 },
-      "datasource": { "type": "tempo", "uid": "tempo" },
-      "targets": [
-        {
-          "queryType": "serviceMap",
-          "refId": "A"
-        }
-      ]
-    }
   ]
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/home/ubuntu/skillbridge/skill-bridge-observability}"
+REPO_DIR="${REPO_DIR:-/home/trojan/skillbridge-observability}"
 LOG_FILE="/var/log/skillbridge-observability-install.log"
 
 BACKEND_PROD_URL="${BACKEND_PROD_URL:-https://api.skillbridge.hng14.com}"
@@ -20,7 +20,7 @@ RESEND_API_KEY="${RESEND_API_KEY:?ERROR: set RESEND_API_KEY}"
 
 ALERT_EMAIL_TO="${ALERT_EMAIL_TO:?ERROR: set ALERT_EMAIL_TO}"
 
-PM2_LOGS_DIR="${PM2_LOGS_DIR:-/home/ubuntu/.pm2/logs}"
+PM2_LOGS_DIR="${PM2_LOGS_DIR:-/home/deploy/.pm2/logs}"
 PM2_APP_NAME_PROD="${PM2_APP_NAME_PROD:-skillbridge-api}"
 PM2_APP_NAME_STAGING="${PM2_APP_NAME_STAGING:-skillbridge-api-staging}"
 
@@ -281,6 +281,15 @@ sed -i 's/^;*admin_user = .*/admin_user = admin/' /etc/grafana/grafana.ini
 sed -i 's/^;*http_port = .*/http_port = 3200/'   /etc/grafana/grafana.ini
 grep -q '^http_port' /etc/grafana/grafana.ini || \
     sed -i '/^\[server\]/a http_port = 3200' /etc/grafana/grafana.ini
+sed -i "s|^;*domain = .*|domain = ${SERVER_HOST}|"                        /etc/grafana/grafana.ini
+grep -q '^domain' /etc/grafana/grafana.ini || \
+    sed -i '/^\[server\]/a domain = '"${SERVER_HOST}" /etc/grafana/grafana.ini
+sed -i "s|^;*root_url = .*|root_url = https://${SERVER_HOST}/|"           /etc/grafana/grafana.ini
+grep -q '^root_url' /etc/grafana/grafana.ini || \
+    sed -i '/^\[server\]/a root_url = https://'"${SERVER_HOST}/" /etc/grafana/grafana.ini
+sed -i 's|^;*serve_from_sub_path = .*|serve_from_sub_path = false|'       /etc/grafana/grafana.ini
+grep -q '^serve_from_sub_path' /etc/grafana/grafana.ini || \
+    sed -i '/^\[server\]/a serve_from_sub_path = false' /etc/grafana/grafana.ini
 log "Grafana configured"
 
 LOKI_VERSION="2.9.6"
