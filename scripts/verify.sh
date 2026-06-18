@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API_PORT_PROD="${API_PORT_PROD:-8080}"
-API_PORT_STAGING="${API_PORT_STAGING:-8081}"
+API_PORT_PROD="${API_PORT_PROD:-5001}"
+API_PORT_STAGING="${API_PORT_STAGING:-4001}"
 BACKEND_PROD_URL="${BACKEND_PROD_URL:-http://localhost:${API_PORT_PROD}}"
 BACKEND_STAGING_URL="${BACKEND_STAGING_URL:-http://localhost:${API_PORT_STAGING}}"
 FRONTEND_PROD_URL="${FRONTEND_PROD_URL:-}"
@@ -45,6 +45,9 @@ check_service "alertmanager"
 check_service "grafana-server"
 check_service "loki"
 check_service "promtail"
+check_service "tempo"
+check_service "otelcol"
+check_service "pushgateway"
 
 echo ""
 echo "── HTTP endpoints ────────────────────────────"
@@ -55,6 +58,8 @@ check_http "Blackbox Exporter"   "http://localhost:9115/metrics"
 check_http "Grafana health"      "http://localhost:3200/api/health"
 check_http "Loki ready"          "http://localhost:3100/ready"
 check_http "Promtail ready"      "http://localhost:9080/ready"
+check_http "Tempo ready"         "http://localhost:3300/ready"
+check_http "Pushgateway health"  "http://localhost:9091/-/healthy"
 
 echo ""
 echo "── SkillBridge app probes ────────────────────"
