@@ -46,7 +46,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(increase(deployment_total{environment=\"production\", status=\"success\"}[7d])) or vector(0)",
+          "expr": "sum(changes(deployment_timestamp_seconds{environment=\"production\"}[7d])) or vector(0)",
           "instant": true,
           "legendFormat": "Deploys",
           "refId": "A"
@@ -88,7 +88,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "100 * sum(deployment_total{status=\"failure\"}) / (sum(deployment_total) > 0) or vector(0)",
+          "expr": "100 * sum(increase(deployment_total{status=\"failure\"}[30d])) / (sum(changes(deployment_timestamp_seconds[30d])) > 0) or vector(0)",
           "instant": true,
           "legendFormat": "CFR %",
           "refId": "A"
@@ -129,7 +129,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(increase(deployment_total{status=\"success\"}[30d])) or vector(0)",
+          "expr": "sum(changes(deployment_timestamp_seconds[30d])) or vector(0)",
           "instant": true,
           "legendFormat": "Total",
           "refId": "A"
@@ -170,7 +170,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(increase(deployment_total{environment=\"staging\", status=\"success\"}[7d])) or vector(0)",
+          "expr": "sum(changes(deployment_timestamp_seconds{environment=\"staging\"}[7d])) or vector(0)",
           "instant": true,
           "legendFormat": "Staging",
           "refId": "A"
@@ -217,8 +217,8 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (environment, status) (increase(deployment_total[1d]))",
-          "legendFormat": "{{environment}} / {{status}}",
+          "expr": "sum by (environment) (changes(deployment_timestamp_seconds[1d]))",
+          "legendFormat": "{{environment}} / success",
           "refId": "A"
         }
       ]
@@ -254,7 +254,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "100 * sum by (environment) (increase(deployment_total{status=\"failure\"}[1d])) / (sum by (environment) (increase(deployment_total[1d])) > 0)",
+          "expr": "100 * sum by (environment) (increase(deployment_total{status=\"failure\"}[1d])) / (sum by (environment) (changes(deployment_timestamp_seconds[1d])) > 0)",
           "legendFormat": "CFR — {{environment}}",
           "refId": "A"
         }
@@ -290,7 +290,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (branch) (increase(deployment_total{status=\"success\"}[1d]))",
+          "expr": "sum by (branch) (changes(deployment_timestamp_seconds[1d]))",
           "legendFormat": "{{branch}}",
           "refId": "A"
         }
@@ -321,5 +321,5 @@
   "timezone": "browser",
   "title": "DORA Metrics",
   "uid": "dora-metrics",
-  "version": 1
+  "version": 2
 }
