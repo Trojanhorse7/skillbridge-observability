@@ -1,6 +1,6 @@
 server:
   http_listen_port: 3300
-  grpc_listen_port: 9096
+  grpc_listen_port: 9097
   log_level: info
 
 # Required on AWS/single-node — Tempo cannot auto-detect advertise IP otherwise
