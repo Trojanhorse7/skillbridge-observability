@@ -304,22 +304,15 @@
   "templating": {
     "list": [
       {
-        "current": {},
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(deployment_total, environment)",
-        "hide": 0,
-        "includeAll": true,
-        "multi": true,
         "name": "environment",
+        "label": "Environment",
+        "type": "custom",
+        "query": "dev,staging,production",
         "options": [],
-        "query": {
-          "query": "label_values(deployment_total, environment)",
-          "refId": "StandardVariableQuery"
-        },
-        "refresh": 2,
-        "sort": 0,
-        "type": "query",
-        "label": "Environment"
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" }
       }
     ]
   },

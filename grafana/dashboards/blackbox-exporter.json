@@ -14,29 +14,23 @@
         "name": "environment",
         "label": "Environment",
         "type": "custom",
-        "options": [
-          { "text": "All", "value": ".*", "selected": true },
-          { "text": "production", "value": "production", "selected": false },
-          { "text": "staging", "value": "staging", "selected": false }
-        ],
+        "query": "production,staging",
+        "options": [],
         "multi": false,
         "includeAll": true,
         "allValue": ".*",
-        "current": { "text": "All", "value": ".*" }
+        "current": { "selected": true, "text": "All", "value": "$__all" }
       },
       {
         "name": "service",
         "label": "Service",
         "type": "custom",
-        "options": [
-          { "text": "All", "value": ".*", "selected": true },
-          { "text": "backend", "value": "backend", "selected": false },
-          { "text": "frontend", "value": "frontend", "selected": false }
-        ],
+        "query": "backend,frontend",
+        "options": [],
         "multi": false,
         "includeAll": true,
         "allValue": ".*",
-        "current": { "text": "All", "value": ".*" }
+        "current": { "selected": true, "text": "All", "value": "$__all" }
       }
     ]
   },

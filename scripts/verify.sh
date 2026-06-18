@@ -67,6 +67,8 @@ check_http "API health     [prod]"    "${BACKEND_PROD_URL}/health"
 check_http "API probe      [prod]"    "${BACKEND_PROD_URL}/probe"
 check_http "API metrics    [prod]"    "${BACKEND_PROD_URL}/metrics"
 check_http "API health     [staging]" "${BACKEND_STAGING_URL}/health"
+check_http "API probe      [staging]" "${BACKEND_STAGING_URL}/probe"
+check_http "API metrics    [staging]" "${BACKEND_STAGING_URL}/metrics"
 [ -n "${FRONTEND_PROD_URL}" ]    && check_http "Frontend       [prod]"    "${FRONTEND_PROD_URL}/api/health"
 [ -n "${FRONTEND_STAGING_URL}" ] && check_http "Frontend       [staging]" "${FRONTEND_STAGING_URL}/api/health"
 
