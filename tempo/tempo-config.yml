@@ -1,7 +1,13 @@
 server:
   http_listen_port: 3300
   grpc_listen_port: 9096
-  log_level: warn
+  log_level: info
+
+# Required on AWS/single-node — Tempo cannot auto-detect advertise IP otherwise
+memberlist:
+  bind_addr:
+    - 127.0.0.1
+  advertise_addr: 127.0.0.1
 
 distributor:
   receivers:
@@ -26,27 +32,5 @@ storage:
       path: /var/lib/tempo/blocks
     wal:
       path: /var/lib/tempo/wal
-    pool:
-      max_workers: 100
-      queue_depth: 10000
 
-metrics_generator:
-  registry:
-    collection_interval: 15s
-    external_labels:
-      source: tempo
-  storage:
-    path: /var/lib/tempo/generator/wal
-    remote_write:
-      - url: http://localhost:9090/api/v1/write
-        send_exemplars: true
-  processor:
-    service_graphs:
-      dimensions: [service.version]
-    span_metrics:
-      dimensions: [service.name, span.kind]
-
-overrides:
-  defaults:
-    metrics_generator:
-      processors: [service-graphs, span-metrics]
+querier: {}

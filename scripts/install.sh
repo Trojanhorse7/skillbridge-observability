@@ -117,7 +117,8 @@ ExecStart=/usr/local/bin/prometheus \
     --storage.tsdb.retention.time=30d \
     --web.console.templates=/etc/prometheus/consoles \
     --web.console.libraries=/etc/prometheus/console_libraries \
-    --web.listen-address=0.0.0.0:9090
+    --web.listen-address=0.0.0.0:9090 \
+    --web.enable-remote-write-receiver
 
 [Install]
 WantedBy=multi-user.target
