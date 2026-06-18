@@ -10,18 +10,7 @@
   "time": { "from": "now-3h", "to": "now" },
   "timepicker": {},
   "annotations": {
-    "list": [
-      {
-        "name": "Deployments",
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "expr": "changes(github_actions_deployments_total{environment=\"production\"}[2m]) > 0",
-        "step": "60s",
-        "titleFormat": "Deployment",
-        "textFormat": "Production deployment",
-        "iconColor": "blue",
-        "enable": true
-      }
-    ]
+    "list": []
   },
   "templating": {
     "list": [
@@ -95,7 +84,7 @@
       "links": [
         {
           "title": "Explore errors in Loki",
-          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{job=\\\"$service\\\", environment=\\\"$environment\\\"} |= \\\"error\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
+          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{job=~\\\"$service\\\", environment=~\\\"$environment\\\"} | json | level=~\\\"error|warn\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
           "targetBlank": true
         }
       ]
@@ -141,7 +130,7 @@
       "links": [
         {
           "title": "Explore slow requests in Loki",
-          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{job=\\\"$service\\\", environment=\\\"$environment\\\"} |= \\\"slow\\\" or |= \\\"timeout\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
+          "url": "/explore?left={\"datasource\":\"loki\",\"queries\":[{\"expr\":\"{job=~\\\"$service\\\", environment=~\\\"$environment\\\"} | json | level=\\\"error\\\"\",\"refId\":\"A\"}],\"range\":{\"from\":\"${__from}\",\"to\":\"${__to}\"}}",
           "targetBlank": true
         }
       ]
@@ -247,14 +236,14 @@
     },
     {
       "id": 12,
-      "title": "Error Logs Only",
-      "description": "Only lines containing 'error', 'ERROR', or 'exception'. Trace IDs here point directly to failing request traces.",
+      "title": "Error & Warning Logs",
+      "description": "Structured JSON logs filtered to warn and error levels from the selected service.",
       "type": "logs",
       "gridPos": { "x": 0, "y": 22, "w": 24, "h": 6 },
       "datasource": { "type": "loki", "uid": "loki" },
       "targets": [
         {
-          "expr": "{job=~\"$service\", environment=~\"$environment\"} |~ \"(?i)(error|exception|fatal|panic)\"",
+          "expr": "{job=~\"$service\", environment=~\"$environment\"} | json | level=~\"error|warn\"",
           "legendFormat": "",
           "refId": "A"
         }

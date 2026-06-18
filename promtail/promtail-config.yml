@@ -20,14 +20,15 @@ scrape_configs:
           __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_PROD__-out*.log
     pipeline_stages:
       - multiline:
-          firstline: '^\d{4}-\d{2}-\d{2}'
+          firstline: '^\{'
           max_wait_time: 3s
-      - regex:
-          expression: '(?P<level>INFO|WARN|ERROR|DEBUG|VERBOSE|LOG)'
+      - json:
+          expressions:
+            level: level
       - labels:
           level:
       - match:
-          selector: '{level="ERROR"}'
+          selector: '{level="error"}'
           stages:
             - labels:
                 error: "true"
@@ -40,13 +41,17 @@ scrape_configs:
           environment: production
           service: backend
           log_type: error
+          level: error
           __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_PROD__-error*.log
     pipeline_stages:
       - multiline:
-          firstline: '^\d{4}-\d{2}-\d{2}|\[.*\]'
+          firstline: '^\{|^\d{4}-\d{2}-\d{2}|\[.*\]'
           max_wait_time: 3s
+      - json:
+          expressions:
+            level: level
       - labels:
-          level: error
+          level:
 
   # ── PM2: staging backend ─────────────────────────────────────────────────────
   - job_name: skillbridge-api-staging
@@ -59,10 +64,11 @@ scrape_configs:
           __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_STAGING__-out*.log
     pipeline_stages:
       - multiline:
-          firstline: '^\d{4}-\d{2}-\d{2}'
+          firstline: '^\{'
           max_wait_time: 3s
-      - regex:
-          expression: '(?P<level>INFO|WARN|ERROR|DEBUG|VERBOSE|LOG)'
+      - json:
+          expressions:
+            level: level
       - labels:
           level:
 
@@ -74,10 +80,53 @@ scrape_configs:
           environment: staging
           service: backend
           log_type: error
+          level: error
           __path__: __PM2_LOGS_DIR__/__PM2_APP_NAME_STAGING__-error*.log
     pipeline_stages:
       - multiline:
-          firstline: '^\d{4}-\d{2}-\d{2}|\[.*\]'
+          firstline: '^\{|^\d{4}-\d{2}-\d{2}|\[.*\]'
           max_wait_time: 3s
+      - json:
+          expressions:
+            level: level
       - labels:
+          level:
+
+  # ── PM2: question-generator (one-shot cron job) ──────────────────────────────
+  - job_name: question-generator
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: question-generator
+          environment: production
+          service: question-generator
+          __path__: __PM2_LOGS_DIR__/question-generator-out*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\{|^\d{4}-\d{2}-\d{2}|\[.*\]'
+          max_wait_time: 3s
+      - json:
+          expressions:
+            level: level
+      - labels:
+          level:
+
+  - job_name: question-generator-errors
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: question-generator
+          environment: production
+          service: question-generator
+          log_type: error
           level: error
+          __path__: __PM2_LOGS_DIR__/question-generator-error*.log
+    pipeline_stages:
+      - multiline:
+          firstline: '^\{|^\d{4}-\d{2}-\d{2}|\[.*\]'
+          max_wait_time: 3s
+      - json:
+          expressions:
+            level: level
+      - labels:
+          level:

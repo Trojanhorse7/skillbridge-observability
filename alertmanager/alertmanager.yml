@@ -84,9 +84,6 @@ receivers:
           - type: button
             text: 'View Dashboard'
             url: '{{ with (index .Alerts 0).Annotations.dashboard_url }}{{ . }}{{ else }}http://localhost:3200{{ end }}'
-          - type: button
-            text: 'View Runbook'
-            url: '{{ with (index .Alerts 0).Annotations.runbook_url }}{{ . }}{{ else }}https://github.com/hng14/skillbridge/tree/main/observability/runbooks{{ end }}'
     email_configs:
       - to: 'team@skillbridge.hng14.com'
         send_resolved: true
@@ -107,9 +104,6 @@ receivers:
           - type: button
             text: 'View Dashboard'
             url: '{{ with (index .Alerts 0).Annotations.dashboard_url }}{{ . }}{{ else }}http://localhost:3200{{ end }}'
-          - type: button
-            text: 'View Runbook'
-            url: '{{ with (index .Alerts 0).Annotations.runbook_url }}{{ . }}{{ else }}https://github.com/hng14/skillbridge/tree/main/observability/runbooks{{ end }}'
     email_configs:
       - to: 'team@skillbridge.hng14.com'
         send_resolved: true

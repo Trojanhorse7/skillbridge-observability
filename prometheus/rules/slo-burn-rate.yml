@@ -46,7 +46,6 @@ groups:
           summary: "SLO fast burn: high error rate on SkillBridge API"
           description: "Error rate is {{ printf \"%.2f\" $value | humanizePercentage }} — burning error budget 14.4× faster than allowed."
           dashboard_url: "http://localhost:3200/d/slo-error-budget/skillbridge-slo-error-budget"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/slo-fast-burn.md"
 
       - alert: SLOSlowBurn
         expr: |
@@ -62,7 +61,6 @@ groups:
           summary: "SLO slow burn: elevated error rate on SkillBridge API"
           description: "Error rate is {{ printf \"%.2f\" $value | humanizePercentage }} — burning error budget 5× faster than allowed."
           dashboard_url: "http://localhost:3200/d/slo-error-budget/skillbridge-slo-error-budget"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/slo-slow-burn.md"
 
       # ── Availability SLO (99.5% uptime) ──────────────────────────────────────
       - alert: AvailabilityFastBurn
@@ -79,7 +77,6 @@ groups:
           summary: "Availability SLO fast burn for {{ $labels.instance }}"
           description: "1h availability {{ printf \"%.2f\" $value | humanizePercentage }} is below 99.5% SLO."
           dashboard_url: "http://localhost:3200/d/slo-error-budget/skillbridge-slo-error-budget"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/slo-fast-burn.md"
 
       - alert: AvailabilitySlowBurn
         expr: avg_over_time(probe_success{job="blackbox-http"}[6h]) < 0.995
@@ -92,7 +89,6 @@ groups:
           summary: "Availability SLO slow burn for {{ $labels.instance }}"
           description: "6h availability {{ printf \"%.2f\" $value | humanizePercentage }} is below 99.5% SLO."
           dashboard_url: "http://localhost:3200/d/slo-error-budget/skillbridge-slo-error-budget"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/slo-slow-burn.md"
 
       # ── Latency SLO (95% requests < 500ms) ───────────────────────────────────
       - alert: LatencyFastBurn
@@ -111,7 +107,6 @@ groups:
           summary: "Latency SLO fast burn on SkillBridge API"
           description: "Only {{ printf \"%.1f\" $value | humanizePercentage }} of requests complete in <500ms (SLO: 95%)."
           dashboard_url: "http://localhost:3200/d/slo-error-budget/skillbridge-slo-error-budget"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/slo-fast-burn.md"
 
       - alert: LatencySlowBurn
         expr: |
@@ -129,4 +124,3 @@ groups:
           summary: "Latency SLO slow burn on SkillBridge API"
           description: "Only {{ printf \"%.1f\" $value | humanizePercentage }} of requests complete in <500ms (SLO: 95%)."
           dashboard_url: "http://localhost:3200/d/slo-error-budget/skillbridge-slo-error-budget"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/slo-slow-burn.md"

@@ -14,7 +14,6 @@ groups:
           summary: "High CPU usage on {{ $labels.instance }}"
           description: "CPU usage is {{ printf \"%.1f\" $value }}% (threshold: 80%) for more than 5 minutes."
           dashboard_url: "http://localhost:3200/d/node-exporter/skillbridge-system-metrics"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/cpu-high.md"
 
       - alert: CPUUsageCritical
         expr: (1 - avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[10m]))) * 100 > 90
@@ -26,7 +25,6 @@ groups:
           summary: "Critical CPU usage on {{ $labels.instance }}"
           description: "CPU usage is {{ printf \"%.1f\" $value }}% (threshold: 90%) for more than 10 minutes."
           dashboard_url: "http://localhost:3200/d/node-exporter/skillbridge-system-metrics"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/cpu-high.md"
 
       # ── Memory ───────────────────────────────────────────────────────────────
       - alert: MemoryUsageHigh
@@ -39,7 +37,6 @@ groups:
           summary: "High Memory usage on {{ $labels.instance }}"
           description: "Memory usage is {{ printf \"%.1f\" $value }}% (threshold: 80%)."
           dashboard_url: "http://localhost:3200/d/node-exporter/skillbridge-system-metrics"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/memory-high.md"
 
       - alert: MemoryUsageCritical
         expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
@@ -51,7 +48,6 @@ groups:
           summary: "Critical Memory usage on {{ $labels.instance }}"
           description: "Memory usage is {{ printf \"%.1f\" $value }}% (threshold: 90%)."
           dashboard_url: "http://localhost:3200/d/node-exporter/skillbridge-system-metrics"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/memory-high.md"
 
       # ── Disk ─────────────────────────────────────────────────────────────────
       - alert: DiskUsageHigh
@@ -64,7 +60,6 @@ groups:
           summary: "High Disk usage on {{ $labels.instance }}"
           description: "Disk usage on / is {{ printf \"%.1f\" $value }}% (threshold: 75%)."
           dashboard_url: "http://localhost:3200/d/node-exporter/skillbridge-system-metrics"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/disk-high.md"
 
       - alert: DiskUsageCritical
         expr: (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) * 100 > 90
@@ -76,7 +71,6 @@ groups:
           summary: "Critical Disk usage on {{ $labels.instance }}"
           description: "Disk usage on / is {{ printf \"%.1f\" $value }}% (threshold: 90%)."
           dashboard_url: "http://localhost:3200/d/node-exporter/skillbridge-system-metrics"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/disk-high.md"
 
       # ── Uptime / Blackbox ────────────────────────────────────────────────────
       - alert: APIDown
@@ -89,7 +83,6 @@ groups:
           summary: "SkillBridge endpoint unreachable: {{ $labels.instance }}"
           description: "Blackbox probe has been failing for {{ $labels.instance }} for more than 2 minutes. The service may be down."
           dashboard_url: "http://localhost:3200/d/blackbox-exporter/skillbridge-uptime-ssl"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/server-down.md"
 
       # ── SSL Certificate ───────────────────────────────────────────────────────
       - alert: SSLCertExpiryWarning
@@ -102,7 +95,6 @@ groups:
           summary: "SSL certificate expiring soon for {{ $labels.instance }}"
           description: "SSL certificate for {{ $labels.instance }} expires in {{ printf \"%.0f\" $value }} days."
           dashboard_url: "http://localhost:3200/d/blackbox-exporter/skillbridge-uptime-ssl"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/ssl-cert-expiry.md"
 
       - alert: SSLCertExpiryCritical
         expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
@@ -114,4 +106,3 @@ groups:
           summary: "SSL certificate expiring CRITICALLY SOON for {{ $labels.instance }}"
           description: "SSL certificate for {{ $labels.instance }} expires in {{ printf \"%.0f\" $value }} days."
           dashboard_url: "http://localhost:3200/d/blackbox-exporter/skillbridge-uptime-ssl"
-          runbook_url: "https://github.com/hng14/skillbridge/blob/main/observability/runbooks/ssl-cert-expiry.md"

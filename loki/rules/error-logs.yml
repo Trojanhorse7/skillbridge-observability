@@ -1,0 +1,45 @@
+groups:
+  - name: skillbridge.logs
+    interval: 1m
+    rules:
+      - alert: BackendErrorLogSpike
+        expr: |
+          sum by (environment) (
+            rate({job="skillbridge-api"} | json | level="error" [5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: skillbridge
+        annotations:
+          summary: "Backend error log spike in {{ $labels.environment }}"
+          description: "Error log rate is {{ printf \"%.2f\" $value }}/s in {{ $labels.environment }}."
+          dashboard_url: "http://localhost:3200/d/unified-observability/skillbridge-unified-observability"
+
+      - alert: BackendErrorLogCritical
+        expr: |
+          sum by (environment) (
+            rate({job="skillbridge-api"} | json | level="error" [5m])
+          ) > 2
+        for: 2m
+        labels:
+          severity: critical
+          service: skillbridge
+        annotations:
+          summary: "Critical backend error log spike in {{ $labels.environment }}"
+          description: "Error log rate is {{ printf \"%.2f\" $value }}/s in {{ $labels.environment }}."
+          dashboard_url: "http://localhost:3200/d/unified-observability/skillbridge-unified-observability"
+
+      - alert: QuestionGeneratorErrorLogs
+        expr: |
+          sum(
+            rate({job="question-generator"} |~ "(?i)error|exception|fatal" [15m])
+          ) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: question-generator
+        annotations:
+          summary: "Question generator produced error logs"
+          description: "The question-generator PM2 job logged errors during its latest run."
+          dashboard_url: "http://localhost:3200/d/unified-observability/skillbridge-unified-observability"

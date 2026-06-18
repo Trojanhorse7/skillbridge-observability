@@ -29,6 +29,15 @@ schema_config:
 limits_config:
   retention_period: 720h   # 30 days
 
+ruler:
+  alertmanager_url: http://localhost:9093
+  storage:
+    type: local
+    local:
+      directory: /var/lib/loki/rules
+  rule_path: /etc/loki/rules
+  enable_alertmanager_v2: true
+
 compactor:
   working_directory: /var/lib/loki/compactor
   retention_enabled: true

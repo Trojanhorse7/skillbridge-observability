@@ -66,3 +66,15 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         replacement: localhost:9115
+
+  # Prometheus Pushgateway — CD deployment metrics (DORA)
+  - job_name: "pushgateway"
+    honor_labels: true
+    static_configs:
+      - targets: ["localhost:9091"]
+
+  # Tempo — metrics from distributed tracing (service graphs, RED metrics)
+  - job_name: "tempo"
+    static_configs:
+      - targets: ["localhost:3300"]
+    metrics_path: /metrics

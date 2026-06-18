@@ -9,8 +9,8 @@ BACKEND_STAGING_URL="${BACKEND_STAGING_URL:-https://api.staging.skillbridge.hng1
 FRONTEND_PROD_URL="${FRONTEND_PROD_URL:-https://skillbridge.hng14.com}"
 FRONTEND_STAGING_URL="${FRONTEND_STAGING_URL:-https://staging.skillbridge.hng14.com}"
 
-API_PORT_PROD=$(echo "$BACKEND_PROD_URL" | grep -oP ':\K[0-9]+$' || echo "8080")
-API_PORT_STAGING=$(echo "$BACKEND_STAGING_URL" | grep -oP ':\K[0-9]+$' || echo "8081")
+API_PORT_PROD="${API_PORT_PROD:-5001}"
+API_PORT_STAGING="${API_PORT_STAGING:-4001}"
 
 GRAFANA_ADMIN_PASSWORD="${GRAFANA_ADMIN_PASSWORD:?ERROR: set GRAFANA_ADMIN_PASSWORD}"
 SLACK_WEBHOOK_URL="${SLACK_WEBHOOK_URL:?ERROR: set SLACK_WEBHOOK_URL}"
@@ -21,7 +21,7 @@ RESEND_API_KEY="${RESEND_API_KEY:?ERROR: set RESEND_API_KEY}"
 ALERT_EMAIL_TO="${ALERT_EMAIL_TO:?ERROR: set ALERT_EMAIL_TO}"
 
 PM2_LOGS_DIR="${PM2_LOGS_DIR:-/home/deploy/.pm2/logs}"
-PM2_APP_NAME_PROD="${PM2_APP_NAME_PROD:-skillbridge-api}"
+PM2_APP_NAME_PROD="${PM2_APP_NAME_PROD:-skillbridge-api-prod}"
 PM2_APP_NAME_STAGING="${PM2_APP_NAME_STAGING:-skillbridge-api-staging}"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"; }
@@ -309,6 +309,8 @@ if ! install_binary loki; then
 fi
 
 cp "$REPO_DIR/loki/loki-config.yml" /etc/loki/
+mkdir -p /etc/loki/rules /var/lib/loki/rules
+cp "$REPO_DIR/loki/rules/"*.yml /etc/loki/rules/ 2>/dev/null || true
 chown -R loki:loki /etc/loki /var/lib/loki
 
 cat > /etc/systemd/system/loki.service << 'UNIT'
@@ -376,10 +378,121 @@ WantedBy=multi-user.target
 UNIT
 log "Promtail configured"
 
+# ── Tempo ─────────────────────────────────────────────────────────────────────
+TEMPO_VERSION="2.5.0"
+id tempo &>/dev/null || useradd --no-create-home --shell /bin/false tempo
+mkdir -p /var/lib/tempo/{blocks,wal,generator/wal} /etc/tempo
+
+if ! install_binary tempo; then
+    log "Installing Tempo ${TEMPO_VERSION}..."
+    cd /tmp
+    download "https://github.com/grafana/tempo/releases/download/v${TEMPO_VERSION}/tempo_${TEMPO_VERSION}_linux_amd64.tar.gz" \
+        tempo.tar.gz
+    tar -xzf tempo.tar.gz
+    cp tempo /usr/local/bin/tempo
+    chmod +x /usr/local/bin/tempo
+fi
+
+cp "$REPO_DIR/tempo/tempo-config.yml" /etc/tempo/tempo-config.yml
+chown -R tempo:tempo /etc/tempo /var/lib/tempo
+
+cat > /etc/systemd/system/tempo.service << 'UNIT'
+[Unit]
+Description=Tempo Distributed Tracing Backend
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=tempo
+Group=tempo
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=/usr/local/bin/tempo -config.file=/etc/tempo/tempo-config.yml
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+log "Tempo configured"
+
+# ── OpenTelemetry Collector ────────────────────────────────────────────────────
+OTELCOL_VERSION="0.99.0"
+id otelcol &>/dev/null || useradd --no-create-home --shell /bin/false otelcol
+mkdir -p /etc/otelcol
+
+if ! install_binary otelcol-contrib; then
+    log "Installing OTel Collector ${OTELCOL_VERSION}..."
+    cd /tmp
+    download "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${OTELCOL_VERSION}/otelcol-contrib_${OTELCOL_VERSION}_linux_amd64.tar.gz" \
+        otelcol.tar.gz
+    tar -xzf otelcol.tar.gz
+    cp otelcol-contrib /usr/local/bin/otelcol-contrib
+    chmod +x /usr/local/bin/otelcol-contrib
+fi
+
+cp "$REPO_DIR/otelcol/otelcol-config.yml" /etc/otelcol/config.yml
+chown -R otelcol:otelcol /etc/otelcol
+
+cat > /etc/systemd/system/otelcol.service << 'UNIT'
+[Unit]
+Description=OpenTelemetry Collector
+Wants=network-online.target tempo.service
+After=network-online.target tempo.service
+
+[Service]
+User=otelcol
+Group=otelcol
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=/usr/local/bin/otelcol-contrib --config=/etc/otelcol/config.yml
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+log "OTel Collector configured"
+
+# ── Prometheus Pushgateway ─────────────────────────────────────────────────────
+PUSHGW_VERSION="1.8.0"
+id pushgateway &>/dev/null || useradd --no-create-home --shell /bin/false pushgateway
+mkdir -p /var/lib/pushgateway
+
+if ! install_binary pushgateway; then
+    log "Installing Pushgateway ${PUSHGW_VERSION}..."
+    cd /tmp
+    download "https://github.com/prometheus/pushgateway/releases/download/v${PUSHGW_VERSION}/pushgateway-${PUSHGW_VERSION}.linux-amd64.tar.gz" \
+        pushgateway.tar.gz
+    tar -xzf pushgateway.tar.gz
+    cp "pushgateway-${PUSHGW_VERSION}.linux-amd64/pushgateway" /usr/local/bin/
+    chown pushgateway:pushgateway /usr/local/bin/pushgateway
+fi
+
+cat > /etc/systemd/system/pushgateway.service << 'UNIT'
+[Unit]
+Description=Prometheus Pushgateway
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pushgateway
+Group=pushgateway
+Type=simple
+Restart=always
+RestartSec=5s
+ExecStart=/usr/local/bin/pushgateway \
+    --web.listen-address=0.0.0.0:9091 \
+    --persistence.file=/var/lib/pushgateway/metrics.db \
+    --persistence.interval=5m
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+log "Pushgateway configured"
+
 log "Starting all services..."
 systemctl daemon-reload
 
-SERVICES="prometheus node_exporter blackbox_exporter alertmanager grafana-server loki promtail"
+SERVICES="prometheus node_exporter blackbox_exporter alertmanager grafana-server loki promtail tempo otelcol pushgateway"
 
 for svc in $SERVICES; do
     systemctl enable "$svc"
@@ -412,10 +525,10 @@ fi
 
 GRAFANA_URL="http://${PUBLIC_IP}:3200"
 log "Patching dashboard URLs → ${GRAFANA_URL}"
-for f in /etc/prometheus/rules/*.yml /etc/alertmanager/alertmanager.yml; do
+for f in /etc/prometheus/rules/*.yml /etc/loki/rules/*.yml /etc/alertmanager/alertmanager.yml; do
     sed -i "s|http://localhost:3200|${GRAFANA_URL}|g" "$f"
 done
-systemctl reload prometheus alertmanager 2>/dev/null || true
+systemctl reload prometheus alertmanager loki 2>/dev/null || true
 
 log "======================================================"
 log "SkillBridge Observability — Installation Complete"
@@ -423,4 +536,6 @@ log "Grafana:      ${GRAFANA_URL}  (admin/${GRAFANA_ADMIN_PASSWORD})"
 log "Prometheus:   http://${PUBLIC_IP}:9090"
 log "Alertmanager: http://${PUBLIC_IP}:9093"
 log "Loki:         http://${PUBLIC_IP}:3100"
+log "Tempo:        http://${PUBLIC_IP}:3300"
+log "Pushgateway:  http://${PUBLIC_IP}:9091"
 log "======================================================"

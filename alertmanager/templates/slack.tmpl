@@ -51,7 +51,6 @@
 
 *Links:*
 {{ if .Annotations.dashboard_url }}• <{{ .Annotations.dashboard_url }}|📊 Grafana Dashboard>{{ end }}
-{{ if .Annotations.runbook_url }}• <{{ .Annotations.runbook_url }}|📖 Runbook>{{ end }}
 {{ end -}}
 {{- end }}
 
@@ -78,7 +77,6 @@
     .links  { margin-top: 16px; }
     .btn    { display: inline-block; padding: 10px 20px; border-radius: 4px; text-decoration: none; color: #fff; margin-right: 10px; font-size: 14px; }
     .btn-dashboard { background: #1976d2; }
-    .btn-runbook   { background: #455a64; }
   </style>
 </head>
 <body>
@@ -109,7 +107,6 @@
     </table>
     <div class="links">
       {{ if .Annotations.dashboard_url }}<a href="{{ .Annotations.dashboard_url }}" class="btn btn-dashboard">View Dashboard</a>{{ end }}
-      {{ if .Annotations.runbook_url }}<a href="{{ .Annotations.runbook_url }}" class="btn btn-runbook">View Runbook</a>{{ end }}
     </div>
   </div>
   {{ end }}

@@ -18,5 +18,24 @@ datasources:
     jsonData:
       derivedFields:
         - name: TraceID
-          matcherRegex: "traceId=(\\w+)"
-          url: ""
+          matcherRegex: '"traceId":"(\w+)"'
+          url: "$${__value.raw}"
+          datasourceUid: tempo
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://localhost:3300
+    access: proxy
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
+      lokiSearch:
+        datasourceUid: loki
+      traceQuery:
+        timeShiftEnabled: true
+        spanStartTimeShift: '-1h'
+        spanEndTimeShift: '1h'
